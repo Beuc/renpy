@@ -46,6 +46,9 @@ try:
 except:
     android = None
 
+if renpy.emscripten:
+    import emscripten
+
 TIMEEVENT = pygame.event.register("TIMEEVENT")
 PERIODIC = pygame.event.register("PERIODIC")
 REDRAW = pygame.event.register("REDRAW")
@@ -108,7 +111,6 @@ PERIODIC_INTERVAL = 50
 # Time management.
 time_base = 0.0
 time_mult = 1.0
-
 
 def init_time():
     warp = os.environ.get("RENPY_TIMEWARP", "1.0")
@@ -2206,7 +2208,6 @@ class Interface(object):
         try:
             renpy.display.scale.image_save_unscaled(window, filename)
             if renpy.emscripten:
-                import emscripten
                 emscripten.run_script(r'''FSDownload('%s');''' % filename)
             return True
         except:
@@ -2626,7 +2627,9 @@ class Interface(object):
 
         if self.text_rect is not None:
 
-            not_shown = pygame.key.has_screen_keyboard_support() and not pygame.key.is_screen_keyboard_shown()  # @UndefinedVariable
+            not_shown = pygame.key.has_screen_keyboard_support() and not pygame.key.is_screen_keyboard_shown() # @UndefinedVariable
+            if renpy.emscripten and self.touch:
+                not_shown = renpy.exports.get_screen('_touchwebkeyboard', layer='screens') is None
 
             if self.old_text_rect != self.text_rect:
                 x, y, w, h = self.text_rect
@@ -2637,12 +2640,21 @@ class Interface(object):
                 pygame.key.set_text_input_rect(rect)  # @UndefinedVariable
 
             if not self.old_text_rect or not_shown:
-                pygame.key.start_text_input()  # @UndefinedVariable
+                pygame.key.start_text_input() # @UndefinedVariable
+                if renpy.emscripten and self.touch:
+                    renpy.exports.restart_interaction()  # required in mobile mode
+                    renpy.exports.show_screen('_touchwebkeyboard',
+                        _layer='screens', # not 'transient' so as to be above other screens
+                                          # not 'overlay' as it conflicts with console
+                        _transient=True,
+                    )
 
         else:
             if self.old_text_rect:
-                pygame.key.stop_text_input()  # @UndefinedVariable
-                pygame.key.set_text_input_rect(None)  # @UndefinedVariable
+                pygame.key.stop_text_input() # @UndefinedVariable
+                pygame.key.set_text_input_rect(None) # @UndefinedVariable
+                if renpy.emscripten and self.touch:
+                    renpy.exports.hide_screen('_touchwebkeyboard', layer='screens')
 
         self.old_text_rect = self.text_rect
 
