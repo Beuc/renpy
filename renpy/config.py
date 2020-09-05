@@ -1009,6 +1009,9 @@ context_copy_remove_screens = [ "notify" ]
 # An exception handling callback.
 exception_handler = None
 
+# Should we show the touch keyboard outside of emscripten/touch.
+touch_keyboard = os.environ.get("RENPY_TOUCH_KEYBOARD", False)
+
 del os
 del collections
 
