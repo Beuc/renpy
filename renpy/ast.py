@@ -719,6 +719,7 @@ class Say(Node):
         try:
 
             renpy.game.context().say_attributes = self.attributes
+            renpy.game.context().temporary_attributes = self.temporary_attributes
 
             who = eval_who(self.who, self.who_fast)
 
